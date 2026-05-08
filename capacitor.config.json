@@ -1,0 +1,6 @@
+{
+  "appId": "com.sawahku.app",
+  "appName": "SawahKu",
+  "webDir": "app/src/main/assets/www",
+  "bundledWebRuntime": false
+}
