@@ -1,0 +1,15 @@
+{
+  "appId": "com.sawahku.app",
+  "appName": "SawahKu",
+  "webDir": "app/src/main/assets/www",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "backgroundColor": "#2c5e2e",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    }
+  }
+}
