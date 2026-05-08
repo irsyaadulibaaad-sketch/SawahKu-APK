@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SawahKu - Bagi Hasil Lengkap Final</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c5e2e;
+            --primary-light: #e8f5e9;
+            --warning: #ff8c42;
+            --danger: #e74c3c;
+            --info: #4a90e2;
+            --purple: #8e44ad;
+            --gold: #ffc107;
+        }
+        * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Arial', sans-serif; }
+        body { background: #eaf7e6; margin: 0; padding: 20px; }
+        .container { max-width: 1600px; margin: auto; background: white; border-radius: 24px; padding: 20px 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); font-size: 1.5rem; margin: 0 0 10px 0; text-align: center; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; background: #f0f7ed; padding: 15px; border-radius: 20px; align-items: center; }
+        button { background: var(--primary); color: white; border: none; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px; }
+        button:hover { opacity: 0.9; }
+        .btn-excel { background: #1f7b4d; }
+        .btn-reset { background: #607d8b; }
+        .btn-pdf { background: var(--danger); }
+        .btn-invoice { background: #e67e22; font-size: 11px; padding: 6px 14px; border-radius: 20px; }
+        .btn-lahan { background: #3498db; font-size: 12px; padding: 4px 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #c8e6c9; padding: 10px 8px; text-align: left; font-size: 13px; }
+        th { background: #d0ecd0; position: sticky; top: 0; }
+        .form-penggarap { background: #fef9e6; border-radius: 20px; padding: 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .form-lahan { background: #fef9e6; border-radius: 20px; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; }
+        input, select, textarea { padding: 8px 12px; border-radius: 20px; border: 1px solid #bbb; font-size: 14px; }
+        textarea { border-radius: 12px; resize: vertical; min-height: 60px; }
+        .info-lahan { background: linear-gradient(135deg, #2c5e2e 0%, #1f4521 100%); color: white; padding: 15px 20px; border-radius: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+        .info-lahan-item { display: flex; align-items: baseline; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 40px; font-size: 13px; }
+        .laporan-panel { background: #fef9e6; border-radius: 20px; padding: 20px; margin-top: 20px; border: 2px solid var(--warning); }
+        .grafik-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 30px; }
+        .grafik-card { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #d4e6d1; }
+        .grafik-card-full { grid-column: span 2; }
+        canvas { max-height: 350px; width: 100%; }
+        .legend-warna { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px; font-size: 12px; justify-content: center; }
+        .sisa-hutang { color: var(--danger); font-weight: bold; }
+        .lunas { color: #27ae60; font-weight: bold; }
+        .lahan-item { background: #e8f5e9; border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+        .lahan-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .lahan-detail { display: none; margin-top: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 24px; padding: 20px; max-width: 850px; width: 95%; max-height: 85vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #d4e6d1; }
+        .close-modal { background: var(--danger); padding: 5px 12px; border-radius: 30px; }
+        .form-hutang { background: #fef9e6; border-radius: 20px; padding: 12px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .form-panen { background: #f0f7ed; border-radius: 20px; padding: 15px; margin-bottom: 15px; }
+        .form-panen-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .form-panen-grid input, .form-panen-grid textarea { width: 100%; }
+        .form-panen-grid .full-width { grid-column: span 3; }
+        .toast-pdf { position: fixed; bottom: 30px; left: 20px; right: 20px; background: var(--primary); color: white; padding: 12px; border-radius: 40px; text-align: center; z-index: 9999; font-weight: bold; }
+        .gps-link { text-decoration: none; font-size: 16px; }
+        .last-panen-badge { background: var(--gold); padding: 3px 8px; border-radius: 12px; font-size: 10px; color: #000; display: inline-block; margin-bottom: 5px; font-weight: bold; }
+        .panen-card { border-radius: 12px; padding: 14px; margin: 8px 0; }
+        .panen-card.terakhir { border: 2px solid var(--gold); background: #fffdf5; }
+        .panen-card.profit-positif { border: 1px solid #c8e6c9; background: #f9fdf9; }
+        .panen-card.profit-negatif { border: 1px solid #ffcdd2; background: #fff5f5; }
+        .panen-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 15px; font-size: 12px; margin: 8px 0; }
+        .panen-label { color: #666; font-size: 10px; text-transform: uppercase; }
+        .panen-value { font-weight: 600; color: #333; }
+        .panen-value.highlight { color: var(--primary); font-size: 14px; }
+        .panen-value.negative { color: var(--danger); }
+        .bagi-hasil-box { background: #e8f5e9; padding: 10px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .bagi-hasil-item { text-align: center; padding: 8px; border-radius: 6px; }
+        .bagi-hasil-owner { background: #c8e6c9; }
+        .bagi-hasil-penggarap { background: #ffe0b2; }
+        .bagi-hasil-label { font-size: 10px; text-transform: uppercase; }
+        .bagi-hasil-nominal { font-size: 16px; font-weight: bold; }
+        .hutang-badge { background: #ffcdd2; color: #c62828; padding: 3px 8px; border-radius: 10px; font-size: 10px; display: inline-block; font-weight: bold; }
+        .lunas-badge { background: #c8e6c9; color: #2e7d32; padding: 3px 8px; border-radius: 10px; font-size: 10px; display: inline-block; font-weight: bold; }
+        .gabah-info-box { background: #fff3e0; padding: 8px; border-radius: 6px; margin: 5px 0; font-size: 11px; }
+        .import-info { background: #fff3cd; padding: 10px 15px; border-radius: 12px; font-size: 11px; margin-top: 10px; border: 1px solid var(--gold); }
+        @media (max-width: 768px) { .form-panen-grid { grid-template-columns: repeat(2, 1fr); } .form-panen-grid .full-width { grid-column: span 2; } .panen-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 1000px) { .grafik-container { grid-template-columns: 1fr; } .grafik-card-full { grid-column: span 1; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🌾 Database Penggarap Sawah - Bagi Hasil & Invoice</h1>
+    <div class="info-lahan">
+        <div class="info-lahan-item"><span>🌱 Total Lahan</span><span id="totalLahanDisplay">0</span><span>Ha</span><button id="editTotalLahanBtn" style="background:rgba(255,255,255,0.3);padding:4px 12px;">✏️</button></div>
+        <div class="info-lahan-item"><span>👨‍🌾 Lahan Tergarap</span><span id="lahanTergarapValue">0</span><span>Ha</span></div>
+        <div class="info-lahan-item"><span>📌 Sisa Lahan</span><span id="sisaLahanValue">0</span><span>Ha</span></div>
+        <div class="info-lahan-item"><span>💰 Total Hutang</span><span id="totalHutangDisplay">Rp 0</span></div>
+        <div class="info-lahan-item"><span>👥 Penggarap</span><span id="jumlahPenggarap">0</span><span>Orang</span></div>
+    </div>
+    <div id="editTotalLahanForm" style="display:none;background:#f0f7ed;padding:12px 20px;border-radius:16px;margin-bottom:20px;">
+        <label>Total luas lahan baru (Ha):</label>
+        <input type="number" id="inputTotalLahanBaru" step="0.5" value="16" style="width:120px;">
+        <button id="simpanTotalLahanBtn">Simpan</button>
+        <button id="batalEditLahanBtn">Batal</button>
+    </div>
+    <div class="toolbar">
+        <button id="tambahPenggarapBtn">+ Tambah Penggarap</button>
+        <button class="btn-excel" id="exportExcelBtn">📎 Export Excel</button>
+        <label for="importExcelInput" style="background:#ff8c42;padding:8px 18px;border-radius:40px;color:white;font-weight:bold;cursor:pointer;">📂 Import Excel</label>
+        <input type="file" id="importExcelInput" accept=".xlsx,.xls,.csv" style="display:none;">
+        <button class="btn-reset" id="resetContohBtn">Reset Data</button>
+    </div>
+    <div class="import-info">
+        <strong>📥 Format Import Excel:</strong> File harus memiliki sheet: <strong>Penggarap</strong>, <strong>Lahan</strong>, <strong>Panen</strong>, <strong>Hutang</strong>, <strong>Info</strong>. Export dulu untuk melihat format.
+    </div>
+    <div class="form-penggarap" id="formPenggarap" style="display:none;">
+        <input type="text" id="nama" placeholder="Nama Penggarap" required>
+        <input type="text" id="alamat" placeholder="Alamat">
+        <input type="number" id="usia" placeholder="Usia">
+        <input type="text" id="kontak" placeholder="No. Kontak">
+        <button id="simpanPenggarapBtn">Simpan Penggarap</button>
+        <button id="batalFormBtn">Batal</button>
+        <input type="hidden" id="editId">
+    </div>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead><tr><th>ID</th><th>Nama</th><th>Kontak</th><th>Total Luas (Ha)</th><th>Hasil Panen Terakhir (Kg)</th><th>Rata-rata Produktivitas (Kg/Ha)</th><th>Sisa Hutang</th><th>Aksi</th></tr></thead>
+            <tbody id="tbodyPenggarap"></tbody>
+        </table>
+    </div>
+    <div class="grafik-container">
+        <div class="grafik-card"><h3>📈 Produksi Panen (Kg)</h3><select id="grafikPilihPenggarapProduksi"></select><select id="grafikPilihLahanProduksi" style="margin-top:5px;"></select><canvas id="produksiChart"></canvas></div>
+        <div class="grafik-card"><h3>⚡ Produktivitas Per Panen (Kg/Ha)</h3><select id="grafikPilihPenggarapProduktivitas"></select><select id="grafikPilihLahanProduktivitas" style="margin-top:5px;"></select><canvas id="produktivitasChart"></canvas></div>
+        <div class="grafik-card"><h3>📊 Perbandingan Rata-rata Produktivitas</h3><canvas id="perbandinganChart"></canvas></div>
+        <div class="grafik-card grafik-card-full"><h3>🌍 GRAFIK GLOBAL - Semua Data Produksi & Produktivitas</h3><div style="display:flex;gap:15px;justify-content:center;"><label><input type="radio" name="globalChartType" value="produksi" checked> Produksi</label><label><input type="radio" name="globalChartType" value="produktivitas"> Produktivitas</label></div><canvas id="globalChart"></canvas><div class="legend-warna" id="globalLegend"></div></div>
+    </div>
+    <div class="laporan-panel">
+        <h3>📄 Laporan & Report Penggarap</h3>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:15px;">
+            <select id="jenisLaporan"><option value="tahunan">📅 Laporan Tahunan (Semua)</option><option value="limaTahunan">📊 Laporan 5 Tahunan (Semua)</option><option value="penggarap">👨‍🌾 Report Per Penggarap</option></select>
+            <select id="tahunLaporan"></select>
+            <select id="pilihPenggarapReport" style="display:none;"><option value="">-- Pilih Penggarap --</option></select>
+            <button id="generatePdfBtn" class="btn-pdf">📑 Generate & Download PDF</button>
+        </div>
+        <div style="background:#e8f5e9;padding:10px;border-radius:12px;font-size:12px;">
+            <strong>📊 Kategori Produktivitas (Kg/Ha):</strong><br>
+            <span style="color:#2c5e2e;">⬤ Sangat Baik: >7000</span> | <span style="color:#4a90e2;">⬤ Baik: 6000-7000</span> | <span style="color:#ff8c42;">⬤ Cukup: 5000-6000</span> | <span style="color:#e24a4a;">⬤ Kurang Optimal: <5000</span>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div id="modalLahan" class="modal"><div class="modal-content"><div class="modal-header"><h3>🗺️ Manajemen Lahan: <span id="modalNamaPenggarapLahan"></span></h3><button class="close-modal" onclick="closeLahanModal()">✕ Tutup</button></div><div class="form-lahan"><input type="text" id="namaLahan" placeholder="Nama Lahan"><input type="number" id="luasLahan" step="0.1" placeholder="Luas (Ha)"><input type="text" id="lokasiLahan" placeholder="Koordinat GPS"><button id="tambahLahanBtn" style="background:#3498db;">➕ Tambah</button></div><h4>📋 Daftar Lahan</h4><div id="daftarLahanModal"></div></div></div>
+<div id="modalPanen" class="modal"><div class="modal-content"><div class="modal-header"><h3>🌾 Input Panen & Bagi Hasil: <span id="modalNamaLahan"></span></h3><button class="close-modal" onclick="closePanenModal()">✕ Tutup</button></div><div class="form-panen"><div class="form-panen-grid"><input type="date" id="tanggalPanenLahan"><input type="number" id="hasilPanenKgLahan" step="1" placeholder="Hasil panen (Kg)"><input type="number" id="hargaGabahPerKg" step="1" placeholder="Harga/Kg (Rp)" value="5000"><input type="number" id="biayaPanenPerKg" step="1" placeholder="Biaya panen/Kg (Rp)" value="400"><input type="number" id="biayaTambahan" step="1000" placeholder="Biaya tambahan (Rp)"><input type="text" id="keteranganBiayaTambahan" placeholder="Keterangan biaya"><input type="number" id="bawaPulangPenggarap" step="1" placeholder="Gabah penggarap (Kg)"><input type="number" id="bawaPulangOwner" step="1" placeholder="Gabah owner (Kg)"><input type="number" id="bawaPulangLain" step="1" placeholder="Gabah lainnya (Kg)"><div class="full-width"><textarea id="catatanPanen" placeholder="Catatan tambahan"></textarea></div></div><button id="tambahPanenLahanBtn" style="background:#2c5e2e;width:100%;margin-top:10px;">+ Tambah Panen & Hitung Bagi Hasil</button></div><h4>📋 Riwayat Panen</h4><div id="riwayatPanenLahan"></div></div></div>
+<div id="modalHutang" class="modal"><div class="modal-content"><div class="modal-header"><h3>💰 Manajemen Hutang: <span id="modalNamaPenggarapHutang"></span></h3><button class="close-modal" onclick="closeHutangModal()">✕ Tutup</button></div><div class="form-hutang"><input type="date" id="tanggalHutang"><input type="number" id="jumlahHutang" step="1000" placeholder="Jumlah (Rp)"><input type="text" id="keperluanHutang" placeholder="Keperluan"><button id="tambahHutangBtn" style="background:#9b59b6;">💰 Tambah</button></div><h4>📋 Riwayat Hutang</h4><div id="tbodyHutangModal"></div></div></div>
+
+<script>
+// ==================== DATA GLOBAL ====================
+let penggarapList = [];
+let hutangList = [];
+let nextId = 5;
+let totalLahanUtama = 16;
+let currentPenggarapId = null;
+let currentLahanIndex = null;
+let chartProduksi = null, chartProduktivitas = null, chartBanding = null, chartGlobal = null;
+const warnaPalet = ['#2c5e2e','#ff8c42','#4a90e2','#e24a4a','#9b59b6','#f1c40f','#e67e22','#1abc9c','#e84393','#34495e'];
+
+// ==================== FUNGSI UTILITY ====================
+function getWarnaPenggarap(i) { return warnaPalet[i % warnaPalet.length]; }
+function getKategori(p) { if(p>7000) return {label:'SANGAT BAIK',icon:'⭐⭐⭐',color:'#2c5e2e',bgColor:'#2c5e2e20'}; if(p>=6000) return {label:'BAIK',icon:'⭐⭐',color:'#4a90e2',bgColor:'#4a90e220'}; if(p>=5000) return {label:'CUKUP',icon:'⭐',color:'#ff8c42',bgColor:'#ff8c4220'}; return {label:'KURANG OPTIMAL',icon:'⚠️',color:'#e24a4a',bgColor:'#e24a4a20'}; }
+function formatRp(a) { return 'Rp ' + Math.round(a).toLocaleString('id-ID'); }
+function formatKg(a) { return Math.round(a).toLocaleString('id-ID') + ' Kg'; }
+function tglPanjang(t) { return new Date(t).toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'}); }
+function tglPendek(t) { return new Date(t).toLocaleDateString('id-ID'); }
+function totalLuas(p) { return p.lahan.reduce((s,l)=>s+l.luas,0); }
+function panenTerakhir(p) { let a=[]; p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>a.push({...pr,lahan:l}));}); if(a.length===0)return null; a.sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal)); return a[0]; }
+function hasilTerakhir(p) { let pt=panenTerakhir(p); return pt?pt.hasilKg:0; }
+function totalHasil(p) { let t=0; p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>t+=pr.hasilKg);}); return t; }
+function rataProd(p) { let tp=0,j=0; p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>{tp+=pr.hasilKg/l.luas;j++;});}); return j===0?0:tp/j; }
+function lahanTergarap() { return penggarapList.reduce((s,p)=>s+totalLuas(p),0); }
+function sisaHutang(pid) { return hutangList.filter(h=>h.penggarapId===pid).reduce((s,h)=>s+(h.sisa!==undefined?h.sisa:h.jumlah),0); }
+function totalHutang() { return hutangList.reduce((s,h)=>s+(h.sisa!==undefined?h.sisa:h.jumlah),0); }
+function totalProfitOwner(p) { let t=0; p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>t+=(pr.profitOwner||0));}); return t; }
+function totalProfitPenggarap(p) { let t=0; p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>t+=(pr.profitPenggarap||0));}); return t; }
+function jmlPanen(p) { let j=0; p.lahan.forEach(l=>{if(l.produksi)j+=l.produksi.length;}); return j; }
+function totalPotongan(p) { let t=0; p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>t+=(pr.potonganHutang||0));}); return t; }
+
+// ==================== PROSES PANEN ====================
+function prosesPanen(pid,li,tgl,hk,hg,bpk,bt,kb,bpg,bpo,bpl,cat){
+    let p=penggarapList.find(pg=>pg.id===pid); if(!p||!p.lahan[li])return null;
+    let l=p.lahan[li]; bt=bt||0; bpg=bpg||0; bpo=bpo||0; bpl=bpl||0; kb=kb||''; cat=cat||'';
+    let pendapatan=hk*hg, biaya=hk*bpk, totalBiaya=biaya+bt, profitBersih=pendapatan-totalBiaya;
+    if(profitBersih<=0){
+        if(!l.produksi)l.produksi=[];
+        let dp={tanggal:tgl,hasilKg:hk,hargaGabah:hg,biayaPanenPerKg:bpk,biayaTambahan:bt,keteranganBiayaTambahan:kb,bawaPenggarap:bpg,bawaOwner:bpo,bawaLain:bpl,profitBersih,profitOwner:0,profitPenggarap:0,potonganHutang:0,totalHutangSebelum:sisaHutang(pid),sisaHutangSesudah:sisaHutang(pid),catatan:cat};
+        l.produksi.push(dp); l.produksi.sort((a,b)=>new Date(a.tanggal)-new Date(b.tanggal)); saveData(); renderAll();
+        alert('⚠️ Profit bersih negatif ('+formatRp(profitBersih)+'), tidak ada pembagian.\nData panen tetap disimpan.');
+        return dp;
+    }
+    let po=profitBersih*0.5, pp=profitBersih*0.5;
+    po+=bpg*hg; pp-=bpg*hg; pp+=bpo*hg; po-=bpo*hg; po-=bpl*hg*0.5; pp-=bpl*hg*0.5;
+    let hs=sisaHutang(pid), pot=0;
+    if(hs>0&&pp>0){
+        pot=Math.min(pp,hs); pp-=pot; po+=pot;
+        if(pot>=hs){ hutangList.forEach(h=>{if(h.penggarapId===pid){h.sisa=0;h.dibayar=h.jumlah;}}); }
+        else { let sp=pot; for(let h of hutangList){if(h.penggarapId===pid&&sp>0){let sh=h.sisa!==undefined?h.sisa:h.jumlah; let k=Math.min(sh,sp); h.sisa=sh-k; h.dibayar=(h.dibayar||0)+k; sp-=k;}} }
+    }
+    let hs2=sisaHutang(pid);
+    if(!l.produksi)l.produksi=[];
+    let dp={tanggal:tgl,hasilKg:hk,hargaGabah:hg,biayaPanenPerKg:bpk,biayaTambahan:bt,keteranganBiayaTambahan:kb,bawaPenggarap:bpg,bawaOwner:bpo,bawaLain:bpl,profitBersih,profitOwner:po,profitPenggarap:pp,potonganHutang:pot,totalHutangSebelum:hs,sisaHutangSesudah:hs2,catatan:cat};
+    l.produksi.push(dp); l.produksi.sort((a,b)=>new Date(a.tanggal)-new Date(b.tanggal)); saveData(); renderAll();
+    let msg='✅ Panen '+formatKg(hk)+' ('+(hk/l.luas).toFixed(0)+' Kg/Ha)\n📊 Profit Bersih: '+formatRp(profitBersih)+'\n👤 Owner: '+formatRp(po)+'\n👨‍🌾 Penggarap: '+formatRp(pp);
+    if(bpg>0)msg+='\n🏠 Penggarap bawa: '+bpg+' Kg';
+    if(bpo>0)msg+='\n🏠 Owner bawa: '+bpo+' Kg';
+    if(pot>0)msg+='\n💰 Potongan Hutang: '+formatRp(pot);
+    if(hs2===0&&hs>0)msg+='\n🎉 HUTANG LUNAS!';
+    else if(hs2>0)msg+='\n📉 Sisa Hutang: '+formatRp(hs2);
+    alert(msg); return dp;
+}
+
+// ==================== LOAD/SAVE ====================
+function loadData(){
+    const s=localStorage.getItem("sawahku_final_complete_v2");
+    if(s){ const d=JSON.parse(s); penggarapList=d.penggarapList||[]; hutangList=d.hutangList||[]; totalLahanUtama=d.totalLahanUtama||16; if(penggarapList.length)nextId=Math.max(...penggarapList.map(p=>p.id),0)+1; }
+    else { penggarapList=[{id:1,nama:"Irsyaad",alamat:"Dusun Sumberjo",usia:45,kontak:"085162661397",lahan:[{nama:"Sawah Utama",luas:3.4,lokasiKoordinat:"-7.5501,110.8267",produksi:[]}]}]; hutangList=[]; nextId=2; saveData(); }
+    renderAll();
+}
+function saveData(){ localStorage.setItem("sawahku_final_complete_v2",JSON.stringify({penggarapList,hutangList,totalLahanUtama})); }
+
+// ==================== RENDER UTAMA ====================
+function renderTabel(){
+    let tb=document.getElementById("tbodyPenggarap"); tb.innerHTML="";
+    penggarapList.forEach(p=>{
+        let tl=totalLuas(p), ht=hasilTerakhir(p), rp=rataProd(p), sh=sisaHutang(p.id), kat=getKategori(rp), pt=panenTerakhir(p);
+        let row=tb.insertRow();
+        row.insertCell(0).innerText=p.id; row.insertCell(1).innerHTML='<strong>'+p.nama+'</strong>'; row.insertCell(2).innerText=p.kontak||"-";
+        row.insertCell(3).innerText=tl.toFixed(2)+' Ha';
+        row.insertCell(4).innerHTML=ht.toLocaleString()+' Kg'+(pt?'<br><span style="font-size:10px;color:#666;">Terakhir: '+tglPendek(pt.tanggal)+'</span>':'');
+        row.insertCell(5).innerHTML='<span style="font-weight:bold;color:'+kat.color+';">'+rp.toFixed(0)+' Kg/Ha<br><span style="font-size:10px;">'+kat.icon+' '+kat.label+'</span></span>';
+        row.insertCell(6).innerHTML=sh>0?'<span class="sisa-hutang">'+formatRp(sh)+'</span>':'<span class="lunas">Lunas ✅</span>';
+        row.insertCell(7).innerHTML='<button class="btn-lahan" onclick="openLahanModal('+p.id+',\''+p.nama.replace(/'/g,"\\'")+'\')">🗺️ Lahan</button> <button style="background:#9b59b6;font-size:12px;padding:4px 12px;" onclick="openHutangModal('+p.id+',\''+p.nama.replace(/'/g,"\\'")+'\')">💰 Hutang</button> <button style="background:#ffaa33;font-size:12px;padding:4px 8px;" onclick="editPenggarap('+p.id+')">✏️</button> <button style="background:#b22234;font-size:12px;padding:4px 8px;" onclick="hapusPenggarap('+p.id+')">🗑️</button>';
+    });
+}
+function hapusPenggarap(id){ let p=penggarapList.find(pg=>pg.id===id); if(p&&confirm('Hapus '+p.nama+' beserta semua data?')){ penggarapList=penggarapList.filter(pr=>pr.id!==id); hutangList=hutangList.filter(h=>h.penggarapId!==id); saveData(); renderAll(); } }
+function updateInfoLahan(){ let tg=lahanTergarap(); document.getElementById("totalLahanDisplay").innerText=totalLahanUtama; document.getElementById("lahanTergarapValue").innerText=tg.toFixed(2); document.getElementById("sisaLahanValue").innerText=(totalLahanUtama-tg).toFixed(2); document.getElementById("totalHutangDisplay").innerHTML=formatRp(totalHutang()); document.getElementById("jumlahPenggarap").innerText=penggarapList.length; }
+function updateTahunDropdown(){ let ts=new Set(); penggarapList.forEach(p=>p.lahan.forEach(l=>l.produksi?.forEach(pr=>ts.add(new Date(pr.tanggal).getFullYear())))); let sel=document.getElementById("tahunLaporan"); sel.innerHTML=ts.size>0?Array.from(ts).sort().reverse().map(t=>'<option>'+t+'</option>').join(''):'<option>2024</option>'; }
+function updatePenggarapDropdown(){ let sel=document.getElementById("pilihPenggarapReport"); sel.innerHTML='<option value="">-- Pilih Penggarap --</option>'+penggarapList.map(p=>'<option value="'+p.id+'">'+p.nama+'</option>').join(''); }
+function refreshDropdowns(){ let opt='<option value="">-- Pilih --</option>'+penggarapList.map(p=>'<option value="'+p.id+'">'+p.nama+'</option>').join(''); let s1=document.getElementById("grafikPilihPenggarapProduksi"),s2=document.getElementById("grafikPilihPenggarapProduktivitas"); if(s1)s1.innerHTML=opt; if(s2)s2.innerHTML=opt; if(penggarapList.length>0){if(s1)s1.value=penggarapList[0].id;if(s2)s2.value=penggarapList[0].id;} updateLahanDropdowns(); }
+function updateLahanDropdowns(){ let us=(sid,pid)=>{let sel=document.getElementById(sid);if(!sel)return;let p=penggarapList.find(pg=>pg.id==pid);sel.innerHTML=(p&&p.lahan.length>0)?'<option value="all">📊 Semua Lahan</option>'+p.lahan.map((l,i)=>'<option value="'+i+'">🗺️ '+l.nama+' ('+l.luas+' Ha)</option>').join(''):'<option value="">-- Pilih Lahan --</option>';}; us("grafikPilihLahanProduksi",document.getElementById("grafikPilihPenggarapProduksi")?.value); us("grafikPilihLahanProduktivitas",document.getElementById("grafikPilihPenggarapProduktivitas")?.value); }
+
+// ==================== GRAFIK ====================
+function updateProduksiChart(){ let pid=document.getElementById("grafikPilihPenggarapProduksi")?.value,lid=document.getElementById("grafikPilihLahanProduksi")?.value; if(!pid)return; let p=penggarapList.find(pg=>pg.id==pid); if(!p)return; let d=[],l=[]; if(lid==="all"){let a=[];p.lahan.forEach(ll=>{if(ll.produksi)a.push(...ll.produksi);});a.sort((a,b)=>new Date(a.tanggal)-new Date(b.tanggal));l=a.map(pr=>tglPendek(pr.tanggal));d=a.map(pr=>pr.hasilKg);}else if(lid!==undefined&&lid!==""){let ll=p.lahan[parseInt(lid)];if(ll?.produksi){let s=[...ll.produksi].sort((a,b)=>new Date(a.tanggal)-new Date(b.tanggal));l=s.map(pr=>tglPendek(pr.tanggal));d=s.map(pr=>pr.hasilKg);}} let ctx=document.getElementById('produksiChart').getContext('2d'); if(chartProduksi)chartProduksi.destroy(); if(d.length>0)chartProduksi=new Chart(ctx,{type:'line',data:{labels:l,datasets:[{label:'Produksi (Kg)',data:d,borderColor:'#2c5e2e',tension:0.2,fill:true}]},options:{responsive:true}}); }
+function updateProduktivitasChart(){ let pid=document.getElementById("grafikPilihPenggarapProduktivitas")?.value,lid=document.getElementById("grafikPilihLahanProduktivitas")?.value; if(!pid)return; let p=penggarapList.find(pg=>pg.id==pid); if(!p)return; let d=[],l=[]; if(lid==="all"){let a=[];p.lahan.forEach(ll=>{if(ll.produksi)ll.produksi.forEach(pr=>a.push({t:pr.tanggal,v:pr.hasilKg/ll.luas}));});a.sort((a,b)=>new Date(a.t)-new Date(b.t));l=a.map(x=>tglPendek(x.t));d=a.map(x=>x.v);}else if(lid!==undefined&&lid!==""){let ll=p.lahan[parseInt(lid)];if(ll?.produksi){let s=[...ll.produksi].sort((a,b)=>new Date(a.tanggal)-new Date(b.tanggal));l=s.map(pr=>tglPendek(pr.tanggal));d=s.map(pr=>pr.hasilKg/ll.luas);}} let ctx=document.getElementById('produktivitasChart').getContext('2d'); if(chartProduktivitas)chartProduktivitas.destroy(); if(d.length>0)chartProduktivitas=new Chart(ctx,{type:'line',data:{labels:l,datasets:[{label:'Produktivitas (Kg/Ha)',data:d,borderColor:'#ff8c42',tension:0.2,fill:true}]},options:{responsive:true}}); }
+function updatePerbandinganChart(){ if(penggarapList.length===0)return; let l=[],d=[],c=[]; penggarapList.forEach((p,i)=>{let rp=rataProd(p);if(rp>0){l.push(p.nama);d.push(rp);c.push(getWarnaPenggarap(i));}}); let ctx=document.getElementById('perbandinganChart').getContext('2d'); if(chartBanding)chartBanding.destroy(); if(d.length>0)chartBanding=new Chart(ctx,{type:'bar',data:{labels:l,datasets:[{label:'Rata-rata (Kg/Ha)',data:d,backgroundColor:c,borderRadius:8}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}}); }
+function updateGlobalChart(){ let ct=document.querySelector('input[name="globalChartType"]:checked')?.value||'produksi'; let ads=new Set(); penggarapList.forEach(p=>p.lahan.forEach(l=>l.produksi?.forEach(pr=>ads.add(pr.tanggal)))); let ad=Array.from(ads).sort(); if(ad.length===0)return; let labels=ad.map(d=>tglPendek(d)),ds=[],lh=''; penggarapList.forEach((p,i)=>{let dm=new Map(); p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>{if(ct==='produksi')dm.set(pr.tanggal,(dm.get(pr.tanggal)||0)+pr.hasilKg);else{let e=dm.get(pr.tanggal);dm.set(pr.tanggal,e?{h:e.h+pr.hasilKg,l:e.l+l.luas}:{h:pr.hasilKg,l:l.luas});}});}); let arr=ad.map(d=>{let v=dm.get(d);return ct==='produksi'?(v||null):(v?v.h/v.l:null);}); if(arr.some(v=>v!==null)){let w=getWarnaPenggarap(i);ds.push({label:p.nama,data:arr,borderColor:w,borderWidth:2.5,tension:0.2,pointRadius:4,spanGaps:true});lh+='<div style="display:flex;align-items:center;gap:5px;"><div style="width:20px;height:3px;background:'+w+';"></div><span>'+p.nama+'</span></div>';}}); document.getElementById("globalLegend").innerHTML=lh; let ctx=document.getElementById('globalChart').getContext('2d'); if(chartGlobal)chartGlobal.destroy(); if(ds.length>0)chartGlobal=new Chart(ctx,{type:'line',data:{labels,datasets:ds},options:{responsive:true,scales:{y:{beginAtZero:true}},plugins:{legend:{display:false}}}}); }
+
+// ==================== MODAL LAHAN ====================
+function openLahanModal(id,nama){ currentPenggarapId=id; document.getElementById("modalNamaPenggarapLahan").innerText=nama; renderDaftarLahan(); document.getElementById("modalLahan").style.display="flex"; }
+function closeLahanModal(){ document.getElementById("modalLahan").style.display="none"; }
+function renderDaftarLahan(){
+    let p=penggarapList.find(pg=>pg.id===currentPenggarapId); if(!p)return;
+    let div=document.getElementById("daftarLahanModal");
+    if(p.lahan.length===0){ div.innerHTML='<div style="padding:15px;text-align:center;color:#999;">Belum ada lahan</div>'; return; }
+    div.innerHTML=p.lahan.map((l,idx)=>{
+        let pt=l.produksi?.length>0?[...l.produksi].sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal))[0]:null;
+        let totalPanen=l.produksi?l.produksi.reduce((s,pr)=>s+pr.hasilKg,0):0;
+        let rp=l.produksi?.length>0?l.produksi.reduce((s,pr)=>s+pr.hasilKg/l.luas,0)/l.produksi.length:0;
+        let kat=getKategori(rp);
+        let gps=l.lokasiKoordinat?'<a href="https://www.google.com/maps?q='+encodeURIComponent(l.lokasiKoordinat)+'" target="_blank" class="gps-link">📍</a>':'📍';
+        return '<div class="lahan-item"><div class="lahan-header" onclick="toggleLahanDetail('+idx+')"><div><strong>🗺️ '+l.nama+'</strong><br><span style="font-size:11px;">'+gps+' | Luas: '+l.luas+' Ha | Total: '+totalPanen.toLocaleString()+' Kg</span></div><div style="text-align:right;"><span style="color:'+kat.color+';font-weight:bold;">'+rp.toFixed(0)+' Kg/Ha</span><br><span style="font-size:10px;">'+kat.icon+' '+kat.label+'</span></div></div><div id="lahanDetail'+idx+'" class="lahan-detail"><div style="display:flex;gap:8px;margin-bottom:8px;"><button onclick="openPanenModal('+idx+',\''+l.nama.replace(/'/g,"\\'")+'\')" style="background:#2c5e2e;padding:5px 12px;font-size:12px;">🌾 Input Panen</button><button onclick="editLahan('+idx+')" style="background:#ffaa33;padding:5px 12px;font-size:12px;">✏️ Edit</button><button onclick="hapusLahan('+idx+')" style="background:#e74c3c;padding:5px 12px;font-size:12px;">🗑️ Hapus</button></div>'+(pt?'<div style="background:#fff3cd;padding:8px;border-radius:8px;font-size:11px;margin-bottom:8px;"><span class="last-panen-badge">PANEN TERAKHIR</span><br>📅 '+tglPendek(pt.tanggal)+': '+formatKg(pt.hasilKg)+' ('+(pt.hasilKg/l.luas).toFixed(0)+' Kg/Ha)'+(pt.profitOwner!==undefined?'<br>👤 Owner: '+formatRp(pt.profitOwner)+' | 👨‍🌾 Penggarap: '+formatRp(pt.profitPenggarap):'')+'</div>':'<div style="color:#999;font-size:11px;">Belum ada panen</div>')+(l.produksi&&l.produksi.length>0?'<div style="font-size:11px;background:#f0f7ed;padding:8px;border-radius:8px;"><strong>📜 Semua Riwayat:</strong><br>'+[...l.produksi].sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal)).map(pr=>tglPendek(pr.tanggal)+': '+formatKg(pr.hasilKg)+' ('+(pr.hasilKg/l.luas).toFixed(0)+' Kg/Ha)').join('<br>')+'</div>':'')+'</div></div>';
+    }).join('');
+}
+window.toggleLahanDetail=function(idx){ let el=document.getElementById('lahanDetail'+idx); if(el)el.style.display=el.style.display==='block'?'none':'block'; };
+document.getElementById("tambahLahanBtn").onclick=()=>{ let n=document.getElementById("namaLahan").value.trim(),l=parseFloat(document.getElementById("luasLahan").value); if(!n||isNaN(l)||l<=0){alert("Isi nama dan luas!");return;} let p=penggarapList.find(pg=>pg.id===currentPenggarapId); if(p){p.lahan.push({nama:n,luas:l,lokasiKoordinat:document.getElementById("lokasiLahan").value,produksi:[]}); saveData(); renderDaftarLahan(); renderAll();} };
+window.editLahan=function(idx){ let p=penggarapList.find(pg=>pg.id===currentPenggarapId); if(!p?.lahan[idx])return; let l=p.lahan[idx]; let nn=prompt("Nama:",l.nama); if(nn)l.nama=nn; let nl=parseFloat(prompt("Luas:",l.luas)); if(!isNaN(nl)&&nl>0)l.luas=nl; l.lokasiKoordinat=prompt("Koordinat:",l.lokasiKoordinat||""); saveData(); renderDaftarLahan(); renderAll(); };
+window.hapusLahan=function(idx){ if(confirm("Hapus?")){ let p=penggarapList.find(pg=>pg.id===currentPenggarapId); if(p){p.lahan.splice(idx,1); saveData(); renderDaftarLahan(); renderAll();} } };
+
+// ==================== MODAL PANEN ====================
+function openPanenModal(idx,nama){ currentLahanIndex=idx; document.getElementById("modalNamaLahan").innerText=nama; renderRiwayatPanen(); document.getElementById("modalPanen").style.display="flex"; ['tanggalPanenLahan','hasilPanenKgLahan','biayaTambahan','keteranganBiayaTambahan','bawaPulangPenggarap','bawaPulangOwner','bawaPulangLain','catatanPanen'].forEach(id=>document.getElementById(id).value=''); document.getElementById("hargaGabahPerKg").value='5000'; document.getElementById("biayaPanenPerKg").value='400'; }
+function closePanenModal(){ document.getElementById("modalPanen").style.display="none"; }
+function renderRiwayatPanen(){
+    let p=penggarapList.find(pg=>pg.id===currentPenggarapId); if(!p?.lahan[currentLahanIndex])return;
+    let l=p.lahan[currentLahanIndex], div=document.getElementById("riwayatPanenLahan");
+    if(!l.produksi?.length){ div.innerHTML='<div style="text-align:center;padding:20px;color:#999;">📭 Belum ada riwayat panen</div>'; return; }
+    let sorted=[...l.produksi].sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal));
+    div.innerHTML=sorted.map((pr,i)=>{
+        let isLast=i===0, origIdx=l.produksi.indexOf(pr);
+        let cardClass=isLast?'terakhir':(pr.profitBersih>0?'profit-positif':'profit-negatif');
+        let totalGabah=(pr.bawaPenggarap||0)+(pr.bawaOwner||0)+(pr.bawaLain||0);
+        return '<div class="panen-card '+cardClass+'">'+
+            (isLast?'<div style="display:flex;justify-content:space-between;"><span class="last-panen-badge">⭐ PANEN TERAKHIR</span><span style="font-size:11px;">#'+(sorted.length-i)+'</span></div>':'')+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin:5px 0;"><h4 style="margin:0;color:#2c5e2e;">📅 '+tglPanjang(pr.tanggal)+'</h4><span style="font-weight:bold;color:#2c5e2e;">'+(pr.hasilKg/l.luas).toFixed(0)+' Kg/Ha</span></div>'+
+            '<div class="panen-grid">'+
+            '<div><div class="panen-label">🌾 Hasil Panen</div><div class="panen-value highlight">'+formatKg(pr.hasilKg)+'</div></div>'+
+            '<div><div class="panen-label">💵 Harga Gabah/Kg</div><div class="panen-value">'+formatRp(pr.hargaGabah)+'</div></div>'+
+            '<div><div class="panen-label">📊 Pendapatan Kotor</div><div class="panen-value">'+formatRp(pr.hasilKg*pr.hargaGabah)+'</div></div>'+
+            '<div><div class="panen-label">📋 Biaya Panen/Kg</div><div class="panen-value">'+formatRp(pr.biayaPanenPerKg)+'</div></div>'+
+            '<div><div class="panen-label">💰 Total Biaya Panen</div><div class="panen-value negative">- '+formatRp(pr.hasilKg*pr.biayaPanenPerKg)+'</div></div>'+
+            (pr.biayaTambahan>0?'<div><div class="panen-label">📋 Biaya Tambahan'+(pr.keteranganBiayaTambahan?'<br><span style="font-size:9px;">('+pr.keteranganBiayaTambahan+')</span>':'')+'</div><div class="panen-value negative">- '+formatRp(pr.biayaTambahan)+'</div></div>':'')+
+            '<div class="full"><div class="panen-label" style="font-size:12px;">💵 PROFIT BERSIH</div><div class="panen-value highlight" style="font-size:18px;">'+formatRp(pr.profitBersih)+'</div></div>'+
+            '</div>'+
+            (totalGabah>0?'<div class="gabah-info-box"><strong>🏠 Gabah Dibawa Pulang:</strong>'+
+                (pr.bawaPenggarap>0?'<br>• Penggarap: <strong>'+pr.bawaPenggarap+' Kg</strong> (nilai: '+formatRp(pr.bawaPenggarap*pr.hargaGabah)+') → <span style="color:#e74c3c;">Owner +'+formatRp(pr.bawaPenggarap*pr.hargaGabah)+'</span>':'')+
+                (pr.bawaOwner>0?'<br>• Owner: <strong>'+pr.bawaOwner+' Kg</strong> (nilai: '+formatRp(pr.bawaOwner*pr.hargaGabah)+') → <span style="color:#27ae60;">Penggarap +'+formatRp(pr.bawaOwner*pr.hargaGabah)+'</span>':'')+
+                (pr.bawaLain>0?'<br>• Lainnya: <strong>'+pr.bawaLain+' Kg</strong> → masing-masing -'+formatRp(pr.bawaLain*pr.hargaGabah*0.5):'')+
+            '</div>':'')+
+            '<div class="bagi-hasil-box">'+
+            '<div class="bagi-hasil-item bagi-hasil-owner"><div class="bagi-hasil-label">👤 OWNER</div><div class="bagi-hasil-nominal">'+formatRp(pr.profitOwner)+'</div></div>'+
+            '<div class="bagi-hasil-item bagi-hasil-penggarap"><div class="bagi-hasil-label">👨‍🌾 PENGGARAP</div><div class="bagi-hasil-nominal">'+formatRp(pr.profitPenggarap)+'</div></div>'+
+            '</div>'+
+            (pr.potonganHutang>0?'<div style="margin-top:8px;background:#ffebee;padding:8px;border-radius:6px;font-size:11px;"><span class="hutang-badge">🔴 POTONGAN HUTANG</span><br>Hutang sebelum: <strong>'+formatRp(pr.totalHutangSebelum||0)+'</strong> → Dipotong: <strong style="color:#e74c3c;">- '+formatRp(pr.potonganHutang)+'</strong> → Sisa: <strong style="color:'+(pr.sisaHutangSesudah>0?'#e74c3c':'#27ae60')+';">'+(pr.sisaHutangSesudah>0?formatRp(pr.sisaHutangSesudah):'LUNAS ✅')+'</strong></div>':'')+
+            (pr.catatan?'<div style="margin-top:6px;font-size:10px;color:#666;">📝 '+pr.catatan+'</div>':'')+
+            '<div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;"><button onclick="downloadInvoice('+currentPenggarapId+','+currentLahanIndex+','+origIdx+')" class="btn-invoice">🧾 Download Invoice PDF</button><button onclick="hapusPanen('+origIdx+')" style="background:#e74c3c;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;">🗑️ Hapus</button></div></div>';
+    }).join('');
+}
+async function downloadInvoice(pid,li,pi){
+    let p=penggarapList.find(pg=>pg.id===pid); if(!p?.lahan[li]?.produksi[pi])return;
+    let l=p.lahan[li], pr=l.produksi[pi];
+    let inv=document.createElement('div'); inv.style.cssText='background:white;padding:30px;font-family:Arial,sans-serif;max-width:750px;margin:auto;color:#333;font-size:13px;position:absolute;left:-9999px;top:0;';
+    inv.innerHTML=
+        '<div style="text-align:center;border-bottom:3px solid #2c5e2e;padding-bottom:15px;margin-bottom:20px;">'+
+        '<h1 style="color:#2c5e2e;margin:0;font-size:22px;">🧾 INVOICE BAGI HASIL PANEN</h1>'+
+        '<p style="color:#666;margin:5px 0;">SawahKu - Sistem Bagi Hasil Pertanian</p>'+
+        '<p style="font-size:11px;color:#999;">Dicetak: '+new Date().toLocaleString('id-ID')+'</p></div>'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:20px;"><div><strong>📋 Penggarap:</strong><br>'+p.nama+'<br>'+(p.alamat||'-')+'<br>'+(p.kontak||'-')+'</div><div style="text-align:right;"><strong>🗺️ Lahan:</strong><br>'+l.nama+'<br>'+l.luas+' Ha<br>'+tglPanjang(pr.tanggal)+'</div></div>'+
+        '<div style="background:#e8f5e9;padding:12px;border-radius:8px;margin-bottom:20px;"><strong>🌾 Hasil Panen:</strong> '+formatKg(pr.hasilKg)+' | <strong>Produktivitas:</strong> '+(pr.hasilKg/l.luas).toFixed(0)+' Kg/Ha</div>'+
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+        '<thead><tr style="background:#2c5e2e;color:white;"><th style="padding:10px;">Uraian</th><th style="padding:10px;text-align:right;">Jumlah</th><th style="padding:10px;text-align:right;">Harga/Kg</th><th style="padding:10px;text-align:right;">Total (Rp)</th></tr></thead><tbody>'+
+        '<tr><td style="padding:8px;">🌾 Hasil Panen</td><td style="padding:8px;text-align:right;">'+formatKg(pr.hasilKg)+'</td><td style="padding:8px;text-align:right;">'+formatRp(pr.hargaGabah)+'</td><td style="padding:8px;text-align:right;font-weight:bold;">'+formatRp(pr.hasilKg*pr.hargaGabah)+'</td></tr>'+
+        '<tr style="background:#fff3cd;"><td style="padding:8px;">📋 Biaya Panen</td><td style="padding:8px;text-align:right;">'+formatKg(pr.hasilKg)+'</td><td style="padding:8px;text-align:right;">'+formatRp(pr.biayaPanenPerKg)+'</td><td style="padding:8px;text-align:right;color:#e74c3c;">- '+formatRp(pr.hasilKg*pr.biayaPanenPerKg)+'</td></tr>'+
+        (pr.biayaTambahan>0?'<tr style="background:#fff3cd;"><td style="padding:8px;">📋 Biaya Tambahan'+(pr.keteranganBiayaTambahan?'<br><span style="font-size:10px;">('+pr.keteranganBiayaTambahan+')</span>':'')+'</td><td style="padding:8px;text-align:right;">-</td><td style="padding:8px;text-align:right;">-</td><td style="padding:8px;text-align:right;color:#e74c3c;">- '+formatRp(pr.biayaTambahan)+'</td></tr>':'')+
+        '<tr style="background:#d4edda;font-weight:bold;font-size:15px;"><td style="padding:10px;" colspan="3">💰 PROFIT BERSIH</td><td style="padding:10px;text-align:right;">'+formatRp(pr.profitBersih)+'</td></tr>'+
+        '<tr><td style="padding:8px;" colspan="4"><strong>🔸 BAGI HASIL 50:50</strong></td></tr>'+
+        '<tr style="background:#d1ecf1;"><td style="padding:8px;">👤 Bagian Owner (50%)</td><td style="padding:8px;text-align:right;" colspan="2"></td><td style="padding:8px;text-align:right;">'+formatRp(pr.profitBersih*0.5)+'</td></tr>'+
+        '<tr style="background:#d1ecf1;"><td style="padding:8px;">👨‍🌾 Bagian Penggarap (50%)</td><td style="padding:8px;text-align:right;" colspan="2"></td><td style="padding:8px;text-align:right;">'+formatRp(pr.profitBersih*0.5)+'</td></tr>'+
+        ((pr.bawaPenggarap||pr.bawaOwner||pr.bawaLain)>0?'<tr><td style="padding:8px;" colspan="4"><strong>🔸 PENYESUAIAN GABAH DIBAWA PULANG</strong></td></tr>':'')+
+        (pr.bawaPenggarap>0?'<tr style="background:#fef9e6;"><td style="padding:8px;">🏠 Penggarap bawa ('+pr.bawaPenggarap+' Kg × '+formatRp(pr.hargaGabah)+')</td><td style="padding:8px;text-align:right;" colspan="2">Owner +'+formatRp(pr.bawaPenggarap*pr.hargaGabah)+' | Penggarap -'+formatRp(pr.bawaPenggarap*pr.hargaGabah)+'</td><td style="padding:8px;text-align:right;">'+formatRp(pr.bawaPenggarap*pr.hargaGabah)+'</td></tr>':'')+
+        (pr.bawaOwner>0?'<tr style="background:#fef9e6;"><td style="padding:8px;">🏠 Owner bawa ('+pr.bawaOwner+' Kg × '+formatRp(pr.hargaGabah)+')</td><td style="padding:8px;text-align:right;" colspan="2">Penggarap +'+formatRp(pr.bawaOwner*pr.hargaGabah)+' | Owner -'+formatRp(pr.bawaOwner*pr.hargaGabah)+'</td><td style="padding:8px;text-align:right;">'+formatRp(pr.bawaOwner*pr.hargaGabah)+'</td></tr>':'')+
+        (pr.bawaLain>0?'<tr style="background:#fef9e6;"><td style="padding:8px;">📦 Lainnya ('+pr.bawaLain+' Kg × '+formatRp(pr.hargaGabah)+')</td><td style="padding:8px;text-align:right;" colspan="2">Masing-masing -'+formatRp(pr.bawaLain*pr.hargaGabah*0.5)+'</td><td style="padding:8px;text-align:right;">'+formatRp(pr.bawaLain*pr.hargaGabah)+'</td></tr>':'')+
+        (pr.potonganHutang>0?'<tr style="background:#ffe0e0;"><td style="padding:8px;">🔴 Potongan Hutang</td><td style="padding:8px;text-align:right;" colspan="2">Penggarap -'+formatRp(pr.potonganHutang)+' | Owner +'+formatRp(pr.potonganHutang)+'</td><td style="padding:8px;text-align:right;color:#e74c3c;">- '+formatRp(pr.potonganHutang)+'</td></tr>':'')+
+        '<tr style="background:#2c5e2e;color:white;font-weight:bold;font-size:16px;"><td style="padding:12px;" colspan="3">👤 TOTAL DITERIMA OWNER</td><td style="padding:12px;text-align:right;font-size:18px;">'+formatRp(pr.profitOwner)+'</td></tr>'+
+        '<tr style="background:#ff8c42;color:white;font-weight:bold;font-size:16px;"><td style="padding:12px;" colspan="3">👨‍🌾 TOTAL DITERIMA PENGGARAP</td><td style="padding:12px;text-align:right;font-size:18px;">'+formatRp(pr.profitPenggarap)+'</td></tr>'+
+        '</tbody></table>'+
+        '<div style="margin-top:20px;padding:12px;background:#f0f7ed;border-radius:8px;">'+
+        '<strong>📊 Ringkasan:</strong><br>• Total Biaya: '+formatRp(pr.hasilKg*pr.biayaPanenPerKg+(pr.biayaTambahan||0))+'<br>• Sisa Hutang: '+(pr.sisaHutangSesudah>0?formatRp(pr.sisaHutangSesudah):'<span style="color:#27ae60;">LUNAS ✅</span>')+(pr.catatan?'<br>• Catatan: '+pr.catatan:'')+'</div>'+
+        '<div style="margin-top:30px;display:flex;justify-content:space-between;text-align:center;"><div><br><br><strong>'+p.nama+'</strong><br><span style="font-size:11px;">Penggarap</span></div><div><br><br><strong>Owner</strong><br><span style="font-size:11px;">Pemilik Lahan</span></div></div>'+
+        '<div style="text-align:center;margin-top:20px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px;">Dokumen digital SawahKu</div>';
+    document.body.appendChild(inv);
+    let toast=document.createElement('div'); toast.className='toast-pdf'; toast.innerText='🧾 Membuat Invoice...'; document.body.appendChild(toast);
+    try{
+        let canvas=await html2canvas(inv,{scale:2});
+        let {jsPDF}=window.jspdf; let pdf=new jsPDF('p','mm','a4');
+        let pw=pdf.internal.pageSize.getWidth()-10, ph=(canvas.height*pw)/canvas.width;
+        let pos=5, hLeft=ph, page=1;
+        pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,pos,pw,ph);
+        hLeft-=pdf.internal.pageSize.getHeight()-10;
+        while(hLeft>0){ pos=-(pdf.internal.pageSize.getHeight()*page)+5; pdf.addPage(); pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,pos,pw,ph); hLeft-=pdf.internal.pageSize.getHeight()-10; page++; }
+        pdf.save('Invoice_'+p.nama+'_'+pr.tanggal+'.pdf');
+        toast.innerText='✅ Invoice berhasil!';
+    }catch(e){ toast.innerText='❌ Gagal'; }
+    setTimeout(()=>{document.body.removeChild(toast);document.body.removeChild(inv);},2000);
+}
+window.hapusPanen=function(idx){ if(confirm("Hapus?")){ let p=penggarapList.find(pg=>pg.id===currentPenggarapId); if(p?.lahan[currentLahanIndex]?.produksi){p.lahan[currentLahanIndex].produksi.splice(idx,1); saveData(); renderRiwayatPanen(); renderAll();} } };
+document.getElementById("tambahPanenLahanBtn").onclick=()=>{
+    let tgl=document.getElementById("tanggalPanenLahan").value, hk=parseFloat(document.getElementById("hasilPanenKgLahan").value);
+    if(!tgl||isNaN(hk)||hk<=0){alert("Isi tanggal dan hasil!");return;}
+    let hasil=prosesPanen(currentPenggarapId,currentLahanIndex,tgl,hk,parseFloat(document.getElementById("hargaGabahPerKg").value)||5000,parseFloat(document.getElementById("biayaPanenPerKg").value)||400,parseFloat(document.getElementById("biayaTambahan").value)||0,document.getElementById("keteranganBiayaTambahan").value||'',parseFloat(document.getElementById("bawaPulangPenggarap").value)||0,parseFloat(document.getElementById("bawaPulangOwner").value)||0,parseFloat(document.getElementById("bawaPulangLain").value)||0,document.getElementById("catatanPanen").value||'');
+    renderRiwayatPanen();
+    if(hasil&&hasil.profitBersih>0) setTimeout(()=>{ let pi=penggarapList.find(pg=>pg.id===currentPenggarapId)?.lahan[currentLahanIndex]?.produksi?.length-1; if(pi>=0&&confirm('📄 Download invoice sekarang?')) downloadInvoice(currentPenggarapId,currentLahanIndex,pi); },500);
+};
+
+// ==================== MODAL HUTANG ====================
+function openHutangModal(id,nama){ currentPenggarapId=id; document.getElementById("modalNamaPenggarapHutang").innerText=nama; renderHutangModal(); document.getElementById("modalHutang").style.display="flex"; }
+function closeHutangModal(){ document.getElementById("modalHutang").style.display="none"; }
+function renderHutangModal(){ let div=document.getElementById("tbodyHutangModal"),list=hutangList.filter(h=>h.penggarapId===currentPenggarapId); if(!list.length){div.innerHTML='<div style="text-align:center;padding:15px;">Tidak ada hutang</div>';return;} div.innerHTML=list.map(h=>{let s=h.sisa!==undefined?h.sisa:h.jumlah; return '<div style="padding:10px;background:'+(s>0?'#fff3cd':'#d1ecf1')+';margin:5px 0;border-radius:8px;"><div style="display:flex;justify-content:space-between;"><div><strong>📅 '+tglPendek(h.tanggal)+'</strong> - '+(h.keperluan||'-')+'<br>💰 Jumlah: '+formatRp(h.jumlah)+' | Sisa: '+(s>0?'<span style="color:#e74c3c;font-weight:bold;">'+formatRp(s)+'</span>':'<span style="color:#27ae60;font-weight:bold;">Lunas ✅</span>')+'</div><div style="display:flex;gap:5px;">'+(s>0?'<button onclick="lunasiHutang('+h.id+')" style="background:#27ae60;padding:4px 8px;font-size:11px;">✅ Lunasi</button>':'')+'<button onclick="editHutang('+h.id+')" style="background:#ffaa33;padding:4px 8px;font-size:11px;">✏️</button><button onclick="hapusHutang('+h.id+')" style="background:#e74c3c;padding:4px 8px;font-size:11px;">🗑️</button></div></div></div>';}).join('');}
+window.lunasiHutang=function(id){ let h=hutangList.find(h=>h.id===id); if(!h)return; let s=h.sisa!==undefined?h.sisa:h.jumlah; if(s<=0){alert("Lunas!");return;} if(confirm('Lunasi '+formatRp(s)+'?')){h.sisa=0;h.dibayar=h.jumlah; saveData(); renderAll(); renderHutangModal(); alert("✅ Lunas!");} };
+window.editHutang=function(id){ let h=hutangList.find(h=>h.id===id); if(!h)return; let nj=parseFloat(prompt("Jumlah:",h.jumlah)); if(isNaN(nj)||nj<=0)return; h.jumlah=nj; h.keperluan=prompt("Keperluan:",h.keperluan||""); h.tanggal=prompt("Tanggal:",h.tanggal)||h.tanggal; h.sisa=Math.max(0,nj-(h.dibayar||0)); saveData(); renderAll(); renderHutangModal(); };
+window.hapusHutang=function(id){ if(confirm("Hapus?")){hutangList=hutangList.filter(h=>h.id!==id); saveData(); renderAll(); renderHutangModal();} };
+document.getElementById("tambahHutangBtn").onclick=()=>{ let t=document.getElementById("tanggalHutang").value,j=parseFloat(document.getElementById("jumlahHutang").value); if(!t||isNaN(j)||j<=0){alert("Isi!");return;} hutangList.push({id:Date.now(),penggarapId:currentPenggarapId,tanggal:t,jumlah:j,keperluan:document.getElementById("keperluanHutang").value,sisa:j}); saveData(); renderAll(); renderHutangModal(); document.getElementById("tanggalHutang").value='';document.getElementById("jumlahHutang").value=''; };
+
+// ==================== CRUD ====================
+function editPenggarap(id){ let p=penggarapList.find(pg=>pg.id===id); if(p){document.getElementById("editId").value=p.id;document.getElementById("nama").value=p.nama;document.getElementById("alamat").value=p.alamat||'';document.getElementById("usia").value=p.usia||'';document.getElementById("kontak").value=p.kontak||'';document.getElementById("formPenggarap").style.display="flex";} }
+document.getElementById("simpanPenggarapBtn").onclick=()=>{ let id=document.getElementById("editId").value,nama=document.getElementById("nama").value.trim(); if(!nama){alert("Nama wajib!");return;} let d={id:id?parseInt(id):nextId++,nama,alamat:document.getElementById("alamat").value,usia:parseInt(document.getElementById("usia").value)||null,kontak:document.getElementById("kontak").value,lahan:id?(penggarapList.find(p=>p.id==id)?.lahan||[]):[]}; if(id){let i=penggarapList.findIndex(p=>p.id==id);if(i!==-1)penggarapList[i]=d;}else penggarapList.push(d); saveData();document.getElementById("formPenggarap").style.display="none";renderAll(); };
+document.getElementById("batalFormBtn").onclick=()=>document.getElementById("formPenggarap").style.display="none";
+document.getElementById("tambahPenggarapBtn").onclick=()=>{document.getElementById("formPenggarap").style.display="flex";['editId','nama','alamat','usia','kontak'].forEach(id=>document.getElementById(id).value='');};
+document.getElementById("editTotalLahanBtn").onclick=()=>{document.getElementById("editTotalLahanForm").style.display="block";document.getElementById("inputTotalLahanBaru").value=totalLahanUtama;};
+document.getElementById("simpanTotalLahanBtn").onclick=()=>{let b=parseFloat(document.getElementById("inputTotalLahanBaru").value);if(isNaN(b)||b<=0){alert("Angka!");return;}totalLahanUtama=b;saveData();updateInfoLahan();document.getElementById("editTotalLahanForm").style.display="none";};
+document.getElementById("batalEditLahanBtn").onclick=()=>document.getElementById("editTotalLahanForm").style.display="none";
+
+// ==================== EXPORT EXCEL LENGKAP ====================
+document.getElementById("exportExcelBtn").addEventListener("click",()=>{
+    try{
+        let wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["ID","Nama","Alamat","Usia","Kontak","Total Luas","Rata Prod","Sisa Hutang","Profit Owner","Profit Penggarap","Jml Panen","Total Potongan"]].concat(penggarapList.map(p=>[p.id,p.nama,p.alamat||'',p.usia||'',p.kontak||'',totalLuas(p).toFixed(2),rataProd(p).toFixed(0),sisaHutang(p.id),Math.round(totalProfitOwner(p)),Math.round(totalProfitPenggarap(p)),jmlPanen(p),Math.round(totalPotongan(p))]))),"Penggarap");
+        let sl=[["ID Penggarap","Nama Penggarap","Nama Lahan","Luas (Ha)","Koordinat","Jml Panen","Total Hasil","Rata Prod"]]; penggarapList.forEach(p=>p.lahan.forEach(l=>{let jp=l.produksi?l.produksi.length:0,th=l.produksi?l.produksi.reduce((s,pr)=>s+pr.hasilKg,0):0,rp=jp>0?l.produksi.reduce((s,pr)=>s+pr.hasilKg/l.luas,0)/jp:0; sl.push([p.id,p.nama,l.nama,l.luas,l.lokasiKoordinat||'',jp,th,rp.toFixed(0)]);})); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sl),"Lahan");
+        let spn=[["ID","Nama","Lahan","Tanggal","Hasil","Harga/Kg","Biaya/Kg","Biaya Tambahan","Keterangan","Bawa Penggarap","Bawa Owner","Bawa Lain","Profit Bersih","Profit Owner","Profit Penggarap","Potongan","Hutang Sebelum","Hutang Sesudah","Catatan"]]; penggarapList.forEach(p=>p.lahan.forEach(l=>l.produksi?.forEach(pr=>spn.push([p.id,p.nama,l.nama,pr.tanggal,pr.hasilKg,pr.hargaGabah,pr.biayaPanenPerKg,pr.biayaTambahan||0,pr.keteranganBiayaTambahan||'',pr.bawaPenggarap||0,pr.bawaOwner||0,pr.bawaLain||0,Math.round(pr.profitBersih),Math.round(pr.profitOwner),Math.round(pr.profitPenggarap),pr.potonganHutang||0,pr.totalHutangSebelum||0,pr.sisaHutangSesudah||0,pr.catatan||''])))); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(spn),"Panen");
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["ID","ID Penggarap","Tanggal","Jumlah","Keperluan","Dibayar","Sisa"]].concat(hutangList.map(h=>[h.id,h.penggarapId,h.tanggal,h.jumlah,h.keperluan||'',h.dibayar||0,h.sisa!==undefined?h.sisa:h.jumlah]))),"Hutang");
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Total Lahan",totalLahanUtama],["Tanggal Export",new Date().toLocaleString('id-ID')]]),"Info");
+        XLSX.writeFile(wb,'SawahKu_Export_'+new Date().toISOString().slice(0,10)+'.xlsx');
+        alert("✅ Export berhasil!\n5 sheet: Penggarap, Lahan, Panen, Hutang, Info");
+    }catch(e){alert("❌ Gagal: "+e.message);}
+});
+
+// ==================== IMPORT EXCEL LENGKAP ====================
+document.getElementById("importExcelInput").addEventListener("change",(e)=>{
+    let file=e.target.files[0]; if(!file)return;
+    let reader=new FileReader();
+    reader.onload=(evt)=>{
+        try{
+            let data=new Uint8Array(evt.target.result), wb=XLSX.read(data,{type:'array'}), impP=[], impH=[], pesan='';
+            let wsP=wb.Sheets["Penggarap"]; if(wsP){let rows=XLSX.utils.sheet_to_json(wsP,{header:1,defval:""}); for(let i=1;i<rows.length;i++){let r=rows[i]; if(!r||r.length<2)continue; let id=parseInt(r[0]); if(isNaN(id))id=Date.now()+i; let nama=r[1]?r[1].toString().trim():""; if(!nama)continue; impP.push({id,nama,alamat:r[2]||"",usia:r[3]?parseInt(r[3]):null,kontak:r[4]||"",lahan:[]});} pesan+='✅ '+impP.length+' penggarap\n';}
+            let wsL=wb.Sheets["Lahan"]; if(wsL){let rows=XLSX.utils.sheet_to_json(wsL,{header:1,defval:""}); for(let i=1;i<rows.length;i++){let r=rows[i]; if(!r||r.length<3)continue; let pid=parseInt(r[0]),namaLahan=r[2]?r[2].toString().trim():"",luas=parseFloat(r[3]); if(isNaN(pid)||!namaLahan||isNaN(luas))continue; let p=impP.find(pg=>pg.id===pid); if(p)p.lahan.push({nama:namaLahan,luas,lokasiKoordinat:r[4]||"",produksi:[]});}}
+            let wsPn=wb.Sheets["Panen"]; if(wsPn){let rows=XLSX.utils.sheet_to_json(wsPn,{header:1,defval:""}); for(let i=1;i<rows.length;i++){let r=rows[i]; if(!r||r.length<5)continue; let pid=parseInt(r[0]),namaLahan=r[2]?r[2].toString().trim():"",tanggal=r[3]?r[3].toString().trim():"",hasilKg=parseFloat(r[4]); if(isNaN(pid)||!namaLahan||!tanggal||isNaN(hasilKg))continue; let p=impP.find(pg=>pg.id===pid); if(p){let lahan=p.lahan.find(l=>l.nama===namaLahan); if(lahan){if(!lahan.produksi)lahan.produksi=[]; lahan.produksi.push({tanggal,hasilKg,hargaGabah:parseFloat(r[5])||0,biayaPanenPerKg:parseFloat(r[6])||0,biayaTambahan:parseFloat(r[7])||0,keteranganBiayaTambahan:r[8]||"",bawaPenggarap:parseFloat(r[9])||0,bawaOwner:parseFloat(r[10])||0,bawaLain:parseFloat(r[11])||0,profitBersih:parseFloat(r[12])||0,profitOwner:parseFloat(r[13])||0,profitPenggarap:parseFloat(r[14])||0,potonganHutang:parseFloat(r[15])||0,totalHutangSebelum:parseFloat(r[16])||0,sisaHutangSesudah:parseFloat(r[17])||0,catatan:r[18]||""});}}} impP.forEach(p=>p.lahan.forEach(l=>{if(l.produksi)l.produksi.sort((a,b)=>new Date(a.tanggal)-new Date(b.tanggal));}));}
+            let wsH=wb.Sheets["Hutang"]; if(wsH){let rows=XLSX.utils.sheet_to_json(wsH,{header:1,defval:""}); for(let i=1;i<rows.length;i++){let r=rows[i]; if(!r||r.length<4)continue; let id=parseInt(r[0]); if(isNaN(id))id=Date.now()+i; let pid=parseInt(r[1]),tanggal=r[2]?r[2].toString().trim():"",jumlah=parseFloat(r[3]); if(isNaN(pid)||!tanggal||isNaN(jumlah))continue; impH.push({id,penggarapId:pid,tanggal,jumlah,keperluan:r[4]||"",dibayar:parseFloat(r[5])||0,sisa:r[6]!==undefined&&r[6]!==""?parseFloat(r[6]):jumlah});} pesan+='✅ '+impH.length+' hutang\n';}
+            let wsI=wb.Sheets["Info"]; if(wsI){let rows=XLSX.utils.sheet_to_json(wsI,{header:1,defval:""}); for(let r of rows){if(r&&r[0]==="Total Lahan"){totalLahanUtama=parseFloat(r[1])||totalLahanUtama; pesan+='✅ Total Lahan: '+totalLahanUtama+' Ha\n';}}}
+            if(impP.length>0){penggarapList=impP; nextId=Math.max(...penggarapList.map(p=>p.id),0)+1;} if(impH.length>0)hutangList=impH;
+            saveData(); renderAll(); alert('📥 Import Selesai!\n\n'+pesan);
+        }catch(err){alert("❌ Error: "+err.message);}
+        e.target.value='';
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+// ==================== PDF LAPORAN TAHUNAN & 5 TAHUNAN ====================
+async function generatePDF(){
+    const jenis=document.getElementById("jenisLaporan").value;
+    if(jenis==='penggarap'){ const pid=parseInt(document.getElementById("pilihPenggarapReport").value); if(!pid){alert("Pilih penggarap!");return;} await generateReportPenggarap(pid); return; }
+    const tahun=parseInt(document.getElementById("tahunLaporan").value); if(!tahun){alert("Pilih tahun!");return;}
+    const toast=document.createElement('div'); toast.className='toast-pdf'; toast.innerText='📑 Membuat laporan...'; document.body.appendChild(toast);
+    const div=document.createElement('div'); div.style.cssText='padding:20px;font-family:Arial;background:white;width:800px;position:absolute;left:-9999px;font-size:12px;';
+    div.innerHTML='<div style="text-align:center;border-bottom:3px solid #2c5e2e;padding-bottom:10px;"><h1 style="color:#2c5e2e;">🌾 LAPORAN EVALUASI SAWAH</h1><h2>'+(jenis==='tahunan'?'TAHUN '+tahun:'5 TAHUN ('+(tahun-4)+'-'+tahun+')')+'</h2><p>'+new Date().toLocaleDateString('id-ID')+'</p></div>';
+    let tt=lahanTergarap(); div.innerHTML+='<div><h3 style="background:#2c5e2e;color:white;padding:8px;">📊 RINGKASAN KONDISI LAHAN</h3><table style="width:100%;"><tr><td>Total Lahan</td><td>'+totalLahanUtama+' Ha</td></tr><tr><td>Lahan Tergarap</td><td>'+tt.toFixed(2)+' Ha</td></tr><tr><td>Sisa Lahan</td><td>'+(totalLahanUtama-tt).toFixed(2)+' Ha</td></tr><tr><td>Jumlah Penggarap</td><td>'+penggarapList.length+' Orang</td></tr><tr><td>Total Hutang</td><td style="color:#e74c3c;">'+formatRp(totalHutang())+'</td></tr></table></div>';
+    let dp=[],tp=0; penggarapList.forEach(p=>{let th=0,tpr=0,jp=0; p.lahan.forEach(l=>{let pf=l.produksi?.filter(pr=>{let y=new Date(pr.tanggal).getFullYear(); return jenis==='tahunan'?y===tahun:(y>=tahun-4&&y<=tahun);})||[]; pf.forEach(pr=>{th+=pr.hasilKg; tpr+=pr.hasilKg/l.luas; jp++;});}); if(jp>0){dp.push({nama:p.nama,hasil:th,prod:tpr/jp,hutang:sisaHutang(p.id),lahan:p.lahan.length,panen:jp}); tp+=th;}});
+    dp.sort((a,b)=>b.prod-a.prod);
+    let tabel='<table border="1" style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#2c5e2e;color:white;"><th>Rank</th><th>Nama</th><th>Lahan</th><th>Panen</th><th>Total Hasil (Kg)</th><th>Rata Prod (Kg/Ha)</th><th>Evaluasi</th><th>Hutang</th></tr></thead><tbody>';
+    dp.forEach((d,i)=>{let k=getKategori(d.prod); tabel+='<tr><td>'+(i+1)+'</td><td>'+d.nama+'</td><td>'+d.lahan+'</td><td>'+d.panen+'</td><td style="text-align:right;">'+d.hasil.toLocaleString()+'</td><td style="text-align:right;font-weight:bold;">'+d.prod.toFixed(0)+'</td><td style="color:'+k.color+';">'+k.icon+' '+k.label+'</td><td>'+(d.hutang>0?formatRp(d.hutang):'Lunas')+'</td></tr>';});
+    tabel+='</tbody></table>';
+    div.innerHTML+='<div style="margin-top:20px;"><h3 style="background:#ff8c42;color:white;padding:8px;">👨‍🌾 RINGKASAN KINERJA PENGgarAP</h3>'+tabel+'</div>';
+    if(dp.length>0){
+        let rata=dp.reduce((s,d)=>s+d.prod,0)/dp.length, terbaik=dp[0], terburuk=dp[dp.length-1];
+        div.innerHTML+='<div style="margin-top:20px;"><h3 style="background:#4a90e2;color:white;padding:8px;">📈 REKAP & REKOMENDASI</h3><table style="width:100%;"><tr><td>Total Produksi</td><td>'+tp.toLocaleString()+' Kg ('+(tp/1000).toFixed(2)+' Ton)</td></tr><tr><td>Rata-rata Produktivitas</td><td>'+rata.toFixed(0)+' Kg/Ha</td></tr><tr><td>🏆 Terbaik</td><td>'+terbaik.nama+' ('+terbaik.prod.toFixed(0)+' Kg/Ha - '+terbaik.panen+' panen di '+terbaik.lahan+' lahan)</td></tr><tr><td>⚠️ Perlu Pendampingan</td><td>'+terburuk.nama+' ('+terburuk.prod.toFixed(0)+' Kg/Ha)</td></tr></table><div style="background:#fef9e6;padding:15px;margin-top:10px;"><h4>💡 REKOMENDASI</h4><ul><li>✅ Berikan apresiasi kepada <strong>'+terbaik.nama+'</strong> atas produktivitas SANGAT BAIK</li><li>📖 Lakukan pendampingan intensif untuk <strong>'+terburuk.nama+'</strong></li><li>🌱 Evaluasi kondisi lahan, irigasi, dan teknik budidaya</li><li>📅 Targetkan peningkatan produktivitas minimal 5%</li><li>💰 Prioritaskan pelunasan hutang penggarap</li></ul></div></div>';
+    }
+    document.body.appendChild(div);
+    try{let canvas=await html2canvas(div,{scale:2}); let {jsPDF}=window.jspdf; let pdf=new jsPDF('p','mm','a4'); let pw=pdf.internal.pageSize.getWidth()-10; pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,pw,(canvas.height*pw)/canvas.width); pdf.save('Laporan_'+jenis+'_'+tahun+'.pdf'); toast.innerText='✅ Berhasil!';}catch(e){toast.innerText='❌ Gagal';}
+    setTimeout(()=>{document.body.removeChild(toast);document.body.removeChild(div);},2000);
+}
+
+// ==================== REPORT PER PENGGARAP ====================
+async function generateReportPenggarap(pid){
+    let p=penggarapList.find(pg=>pg.id===pid); if(!p){alert("Tidak ditemukan!");return;}
+    const toast=document.createElement('div'); toast.className='toast-pdf'; toast.innerText='📋 Membuat laporan '+p.nama+'...'; document.body.appendChild(toast);
+    let sp=[]; p.lahan.forEach(l=>{if(l.produksi)l.produksi.forEach(pr=>sp.push({...pr,namaLahan:l.nama,luasLahan:l.luas}));}); sp.sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal));
+    let jml=sp.length,th=totalHasil(p),tpo=totalProfitOwner(p),tpp=totalProfitPenggarap(p),tpot=totalPotongan(p),rp=rataProd(p),kat=getKategori(rp),sh=sisaHutang(p.id),tl=totalLuas(p);
+    let pt=null,pb=null; if(sp.length>0){let sb=[...sp].sort((a,b)=>(b.hasilKg/b.luasLahan)-(a.hasilKg/a.luasLahan)); pt=sb[0]; pb=sb[sb.length-1];}
+    let rdiv=document.createElement('div'); rdiv.style.cssText='background:white;padding:25px;font-family:Arial;max-width:800px;margin:auto;font-size:12px;position:absolute;left:-9999px;';
+    rdiv.innerHTML=
+        '<div style="background:linear-gradient(135deg,#2c5e2e,#8e44ad);color:white;padding:20px;border-radius:12px;text-align:center;margin-bottom:20px;"><h1 style="margin:0;">📋 LAPORAN KINERJA PENGGARAP</h1><h2 style="margin:8px 0;">'+p.nama+'</h2><p style="font-size:11px;">'+(sp.length>0?tglPendek(sp[sp.length-1].tanggal)+' - '+tglPendek(sp[0].tanggal):'Belum ada panen')+' | Dicetak: '+new Date().toLocaleDateString('id-ID')+'</p></div>'+
+        '<div style="display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;"><div style="flex:1;min-width:200px;background:#e8f5e9;padding:15px;border-radius:10px;text-align:center;"><div style="font-size:24px;">👨‍🌾</div><strong>'+p.nama+'</strong><br>'+(p.alamat||'')+'<br>'+(p.kontak||'')+(p.usia?'<br>Usia: '+p.usia+' tahun':'')+'<br>Total Lahan: <strong>'+tl.toFixed(2)+' Ha</strong> ('+p.lahan.length+' lahan)</div>'+
+        '<div style="flex:1;min-width:200px;background:#fff3e0;padding:15px;border-radius:10px;text-align:center;"><div style="font-size:24px;">📊</div><strong>Ringkasan Kinerja</strong><br>Jumlah Panen: <strong>'+jml+' kali</strong><br>Total Hasil: <strong>'+formatKg(th)+'</strong><br>Rata-rata: <strong style="color:'+kat.color+';">'+rp.toFixed(0)+' Kg/Ha</strong><br><span style="font-size:14px;">'+kat.icon+' '+kat.label+'</span></div>'+
+        '<div style="flex:1;min-width:200px;background:#f3e5f5;padding:15px;border-radius:10px;text-align:center;"><div style="font-size:24px;">💰</div><strong>Keuangan</strong><br>Profit Owner: <span style="color:#27ae60;"><strong>'+formatRp(tpo)+'</strong></span><br>Profit Penggarap: <span style="color:#ff8c42;"><strong>'+formatRp(tpp)+'</strong></span><br>Potongan Hutang: '+formatRp(tpot)+'<br>Sisa Hutang: <strong style="color:'+(sh>0?'#e74c3c':'#27ae60')+';">'+(sh>0?formatRp(sh):'LUNAS ✅')+'</strong></div></div>'+
+        (pt&&pb?'<div style="display:flex;gap:15px;margin-bottom:20px;width:100%;"><div style="flex:1;background:#c8e6c9;padding:12px;border-radius:8px;"><strong>🏆 Panen Terbaik</strong><br>📅 '+tglPendek(pt.tanggal)+'<br>🗺️ '+pt.namaLahan+'<br>🌾 '+formatKg(pt.hasilKg)+' ('+(pt.hasilKg/pt.luasLahan).toFixed(0)+' Kg/Ha)<br>💰 Profit: '+formatRp(pt.profitBersih)+'</div><div style="flex:1;background:#ffcdd2;padding:12px;border-radius:8px;"><strong>⚠️ Panen Terendah</strong><br>📅 '+tglPendek(pb.tanggal)+'<br>🗺️ '+pb.namaLahan+'<br>🌾 '+formatKg(pb.hasilKg)+' ('+(pb.hasilKg/pb.luasLahan).toFixed(0)+' Kg/Ha)<br>💰 Profit: '+formatRp(pb.profitBersih)+'</div></div>':'')+
+        '<h3 style="background:#2c5e2e;color:white;padding:10px;border-radius:8px;">📜 Riwayat Panen Lengkap</h3><table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:#e8f5e9;"><th>No</th><th>Tanggal</th><th>Lahan</th><th>Hasil (Kg)</th><th>Prod</th><th>Profit</th><th>Owner</th><th>Penggarap</th><th>Potongan</th></tr></thead><tbody>'+
+        sp.map((pr,i)=>'<tr style="background:'+(i%2===0?'#fff':'#f9f9f9')+';"><td>'+(i+1)+'</td><td>'+tglPendek(pr.tanggal)+'</td><td>'+pr.namaLahan+'</td><td style="text-align:right;">'+pr.hasilKg.toLocaleString()+'</td><td style="text-align:right;">'+(pr.hasilKg/pr.luasLahan).toFixed(0)+'</td><td style="text-align:right;">'+formatRp(pr.profitBersih)+'</td><td style="text-align:right;color:#27ae60;">'+formatRp(pr.profitOwner||0)+'</td><td style="text-align:right;color:#ff8c42;">'+formatRp(pr.profitPenggarap||0)+'</td><td style="text-align:right;color:#e74c3c;">'+(pr.potonganHutang>0?formatRp(pr.potonganHutang):'-')+'</td></tr>').join('')+
+        '<tr style="background:#2c5e2e;color:white;font-weight:bold;"><td colspan="3">TOTAL</td><td style="text-align:right;">'+th.toLocaleString()+'</td><td></td><td style="text-align:right;">'+formatRp(sp.reduce((s,pr)=>s+(pr.profitBersih||0),0))+'</td><td style="text-align:right;">'+formatRp(tpo)+'</td><td style="text-align:right;">'+formatRp(tpp)+'</td><td style="text-align:right;">'+formatRp(tpot)+'</td></tr></tbody></table>'+
+        '<div style="margin-top:20px;background:#f0f7ed;padding:15px;border-radius:8px;"><h4>💡 Rekomendasi untuk '+p.nama+':</h4><ul style="margin:5px 0;padding-left:20px;">'+
+        (rp>7000?'<li>✅ Pertahankan kinerja SANGAT BAIK! Berikan apresiasi dan bonus.</li>':'')+
+        (rp>=6000&&rp<=7000?'<li>👍 Kinerja BAIK, tingkatkan ke SANGAT BAIK dengan optimasi lahan.</li>':'')+
+        (rp>=5000&&rp<6000?'<li>📖 Perlu pendampingan teknik budidaya untuk meningkatkan hasil.</li>':'')+
+        (rp<5000&&rp>0?'<li>⚠️ Evaluasi menyeluruh kondisi lahan, irigasi, dan teknik tanam.</li>':'')+
+        (sh>0?'<li>💰 Selesaikan sisa hutang sebesar '+formatRp(sh)+' untuk memaksimalkan profit.</li>':'<li>✅ Tidak ada hutang, profit penggarap utuh!</li>')+
+        '<li>📅 Target produktivitas: >7000 Kg/Ha</li><li>🌱 Lakukan rotasi tanaman dan perbaikan irigasi berkala</li></ul></div>'+
+        '<div style="text-align:center;margin-top:25px;font-size:11px;color:#999;"><hr><p>Laporan dibuat oleh Sistem SawahKu untuk evaluasi kinerja penggarap.</p><p>Dokumen berlaku sebagai alat bantu monitoring, bukan dokumen legal.</p></div>';
+    document.body.appendChild(rdiv);
+    try{let canvas=await html2canvas(rdiv,{scale:2}); let {jsPDF}=window.jspdf; let pdf=new jsPDF('p','mm','a4'); let pw=pdf.internal.pageSize.getWidth()-10; pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,pw,(canvas.height*pw)/canvas.width); pdf.save('Laporan_Kinerja_'+p.nama.replace(/\s+/g,'_')+'.pdf'); toast.innerText='✅ Laporan '+p.nama+' berhasil!';}catch(e){toast.innerText='❌ Gagal';}
+    setTimeout(()=>{document.body.removeChild(toast);document.body.removeChild(rdiv);},2000);
+}
+
+// ==================== EVENT LISTENERS ====================
+document.getElementById("generatePdfBtn").addEventListener("click",generatePDF);
+document.getElementById("jenisLaporan").addEventListener("change",function(){const j=this.value; document.getElementById("tahunLaporan").style.display=(j==='tahunan'||j==='limaTahunan')?'inline-block':'none'; document.getElementById("pilihPenggarapReport").style.display=(j==='penggarap')?'inline-block':'none'; if(j==='penggarap')updatePenggarapDropdown();});
+document.getElementById("grafikPilihPenggarapProduksi").addEventListener("change",()=>{updateLahanDropdowns();updateProduksiChart();});
+document.getElementById("grafikPilihPenggarapProduktivitas").addEventListener("change",()=>{updateLahanDropdowns();updateProduktivitasChart();});
+document.getElementById("grafikPilihLahanProduksi").addEventListener("change",updateProduksiChart);
+document.getElementById("grafikPilihLahanProduktivitas").addEventListener("change",updateProduktivitasChart);
+document.querySelectorAll('input[name="globalChartType"]').forEach(r=>r.addEventListener("change",updateGlobalChart));
+document.getElementById("resetContohBtn").addEventListener("click",()=>{if(confirm("Reset ke data contoh?")){localStorage.removeItem("sawahku_final_complete_v2");loadData();}});
+
+function updateAllCharts(){updateProduksiChart();updateProduktivitasChart();updatePerbandinganChart();updateGlobalChart();}
+function renderAll(){renderTabel();refreshDropdowns();updateAllCharts();updateInfoLahan();updateTahunDropdown();updatePenggarapDropdown();}
+
+loadData();
+console.log("✅ SawahKu FINAL - SEMUA FITUR LENGKAP & BERFUNGSI");
+</script>
+</body>
+</html>
